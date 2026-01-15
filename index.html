@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>YCF – Boutique Officielle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- PayPal SDK : Remplace CLIENT_ID par ton Client ID -->
+  <script src="https://www.paypal.com/sdk/js?client-id=ATsAZDHCfEON44-6Y5PMLJeLFt2UOrhgc2Lpz3wCazH5HoVeKLGlk-hFGzlpZlHtCIKFx4CUlzqS-Cpf&currency=EUR"></script>
+
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; background: #f5f5f5; }
+    header { background: #000; color: #fff; text-align: center; padding: 25px; }
+    nav { background: #111; padding: 10px; text-align: center; position: sticky; top: 0; }
+    nav a { color: #fff; margin: 0 15px; text-decoration: none; font-weight: bold; }
+    .badge { background: red; color: #fff; border-radius: 50%; padding: 2px 7px; font-size: 12px; }
+    section { padding: 40px; }
+    h2 { text-align: center; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+    .card img { width: 100%; border-radius: 6px; }
+    button { background: #000; color: #fff; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; margin: 3px; }
+    button:hover { background: #333; }
+    .cart-item { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
+    footer { background: #000; color: #fff; text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>YCF</h1>
+  <p>Boutique officielle</p>
+</header>
+
+<nav>
+  <a href="#produits">Produits</a>
+  <a href="#panier">Panier <span id="cartCount" class="badge">0</span></a>
+  <a href="#commande">Commande</a>
+  <a href="#contact">Contact</a>
+</nav>
+
+<section id="produits">
+  <h2>Produits</h2>
+  <div class="grid">
+    <div class="card">
+      <img src="https://via.placeholder.com/300x200">
+      <h3>T-shirt YCF</h3>
+      <p>14,99 €</p>
+      <button onclick="addToCart('T-shirt YCF',14.99)">Ajouter au panier</button>
+      <button onclick="buyNow('T-shirt YCF',14.99)">Acheter maintenant</button>
+    </div>
+    <div class="card">
+      <img src="https://via.placeholder.com/300x200">
+      <h3>Sweat YCF</h3>
+      <p>23,99 €</p>
+      <button onclick="addToCart('Sweat YCF',23.99)">Ajouter au panier</button>
+      <button onclick="buyNow('Sweat YCF',23.99)">Acheter maintenant</button>
+    </div>
+    <div class="card">
+      <img src="https://via.placeholder.com/300x200">
+      <h3>Casquette YCF</h3>
+      <p>9,99 €</p>
+      <button onclick="addToCart('Casquette YCF',9.99)">Ajouter au panier</button>
+      <button onclick="buyNow('Casquette YCF',9.99)">Acheter maintenant</button>
+    </div>
+  </div>
+</section>
+
+<section id="panier">
+  <h2>Panier</h2>
+  <div class="card" id="cart"></div>
+</section>
+
+<section id="commande">
+  <h2>Commande</h2>
+  <div class="card">
+    <p id="summary"></p>
+    <div id="paypal-button-container"></div>
+    <p id="thankyou" style="color:green; font-weight:bold;"></p>
+  </div>
+</section>
+
+<section id="contact">
+  <h2>Contact</h2>
+  <form class="card">
+    <input placeholder="Nom" required>
+    <input type="email" placeholder="Email" required>
+    <textarea placeholder="Message"></textarea>
+    <button>Envoyer</button>
+  </form>
+</section>
+
+<footer>© 2026 YCF – Notre site vous souhaite la bienvenue</footer>
+
+<script>
+let cart = JSON.parse(localStorage.getItem('ycf_cart')) || [];
+const shipping = 5;
+
+function saveCart(){localStorage.setItem('ycf_cart',JSON.stringify(cart));}
+
+function addToCart(name,price){
+  const item = cart.find(p=>p.name===name);
+  if(item){item.qty++;} else {cart.push({name,price,qty:1});}
+  saveCart(); renderCart();
+}
+
+function changeQty(name,delta){
+  const item = cart.find(p=>p.name===name);
+  if(!item) return;
+  item.qty += delta;
+  if(item.qty<=0) cart = cart.filter(p=>p.name!==name);
+  saveCart(); renderCart();
+}
+
+function renderCart(){
+  const c=document.getElementById('cart');
+  c.innerHTML='';
+  let total=0,count=0;
+
+  if(cart.length===0){c.innerHTML='<p>Panier vide</p>'}
+
+  cart.forEach(p=>{
+    total += p.price*p.qty;
+    count += p.qty;
+    c.innerHTML += `<div class="cart-item"><span>${p.name} (${p.qty})</span><span>${(p.price*p.qty).toFixed(2)} €</span><span><button onclick="changeQty('${p.name}',-1)">-</button><button onclick="changeQty('${p.name}',1)">+</button></span></div>`;
+  });
+
+  document.getElementById('cartCount').innerText = count;
+
+  const final = total + shipping;
+  document.getElementById('summary').innerHTML = `Sous-total : ${total.toFixed(2)} €<br>Livraison : ${shipping.toFixed(2)} €<br><strong>Total : ${final.toFixed(2)} €</strong>`;
+}
+
+function buyNow(name, price){
+  cart = [{name:name, price:price, qty:1}];
+  saveCart();
+  renderCart();
+  window.location.href='#commande';
+}
+
+renderCart();
+
+// PayPal Buttons
+paypal.Buttons({
+  createOrder:(data,actions)=>{
+    let amount=0;
+    cart.forEach(p=>amount+=p.price*p.qty);
+    amount += shipping;
+    return actions.order.create({purchase_units:[{amount:{value:amount.toFixed(2)}}]});
+  },
+  onApprove:(data,actions)=>actions.order.capture().then(details=>{
+    document.getElementById('thankyou').innerText = 'Merci '+details.payer.name.given_name+' pour votre commande !';
+    cart=[]; saveCart(); renderCart();
+  })
+}).render('#paypal-button-container');
+</script>
+
+</body>
+</html>
+
